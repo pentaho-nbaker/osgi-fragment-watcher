@@ -8,7 +8,6 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventConstants;
 import org.osgi.service.event.EventHandler;
 import org.osgi.service.log.LogService;
-import org.osgi.service.packageadmin.PackageAdmin;
 
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -31,18 +30,17 @@ public class FragmentWatcher implements BundleActivator, EventHandler {
     // get the LogService
     logService = bundleContext.getService( bundleContext.getServiceReference( LogService.class ) );
 
+
     // Check for already loaded fragments that failed to attach to their hosts
-    // PackageAdmin is deprecated, but I cannot find how to replicate this code with BundleWiring apis
-    PackageAdmin pAdmin = bundleContext.getService( bundleContext.getServiceReference( PackageAdmin.class ) );
     final Bundle[] bundles = bundleContext.getBundles();
     for ( Bundle bundle : bundles ) {
       final String host = bundle.getHeaders().get( "Fragment-Host" );
-      if ( host != null && pAdmin.getHosts( bundle ) == null ) {
+
+      if ( host != null && bundle.getState() < 4 ) { // not resolved (attached)
         restartHost( host );
       }
+
     }
-
-
     // Register this instance as an EventHandler
     String[] topics = new String[] {
       "org/osgi/framework/BundleEvent/INSTALLED"
